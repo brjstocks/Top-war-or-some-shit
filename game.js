@@ -45,6 +45,115 @@ function createSquad(count) {
     }
 }
 
+// -----------------------
+// Bullets
+// -----------------------
+
+const bullets = [];
+const bulletSpeed = 12;
+
+let lastShot = 0;
+const fireRate = 150; // milliseconds
+
+function shoot() {
+
+    bullets.push({
+        x: leader.x,
+        y: leader.y,
+        radius: 5
+    });
+
+}
+
+function updateBullets() {
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+
+        const b = bullets[i];
+
+        b.y -= bulletSpeed;
+
+        // Collision with wall
+        if (
+            b.x > wall.x - wall.width / 2 &&
+            b.x < wall.x + wall.width / 2 &&
+            b.y > wall.y &&
+            b.y < wall.y + wall.height
+        ) {
+
+            wall.health--;
+
+            bullets.splice(i, 1);
+
+            continue;
+        }
+
+        if (b.y < -20)
+            bullets.splice(i, 1);
+    }
+
+}
+
+function drawBullets() {
+
+    ctx.fillStyle = "yellow";
+
+    bullets.forEach(b => {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            b.x,
+            b.y,
+            b.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    });
+
+}
+
+// -----------------------
+// Wall
+// -----------------------
+
+const wall = {
+    x: canvas.width / 2,
+    y: 150,
+    width: 140,
+    height: 60,
+    health: 100
+};
+
+function drawWall() {
+
+    if (wall.health <= 0)
+        return;
+
+    ctx.fillStyle = "#8B4513";
+
+    ctx.fillRect(
+        wall.x - wall.width / 2,
+        wall.y,
+        wall.width,
+        wall.height
+    );
+
+    ctx.fillStyle = "white";
+    ctx.font = "24px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        wall.health,
+        wall.x,
+        wall.y - 10
+    );
+
+}
+
 createSquad(5);
 
 // -----------------------
@@ -163,15 +272,29 @@ function drawLeader(){
 
 // -----------------------
 
-function update(){
+function update() {
 
     roadOffset += roadSpeed;
+
+    // Fire bullets every 150 ms
+    const now = performance.now();
+
+    if (now - lastShot > fireRate) {
+        shoot();
+        lastShot = now;
+    }
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
     drawRoad();
 
     updateSquad();
+
+    updateBullets();
+
+    drawWall();
+
+    drawBullets();
 
     drawSquad();
 
