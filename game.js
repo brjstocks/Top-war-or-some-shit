@@ -284,13 +284,13 @@ function update() {
         lastShot = now;
     }
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    drawRoad();
-
     updateSquad();
 
     updateBullets();
+    
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawRoad();
 
     drawWall();
 
