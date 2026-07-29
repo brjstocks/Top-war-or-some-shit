@@ -45,6 +45,21 @@ function createSquad(count) {
     }
 }
 
+function addSoldiers(amount) {
+
+    for (let i = 0; i < amount; i++) {
+
+        soldiers.push({
+            x: leader.x,
+            y: leader.y,
+            targetX: leader.x,
+            targetY: leader.y
+        });
+
+    }
+
+}
+
 // -----------------------
 // Bullets
 // -----------------------
@@ -65,32 +80,89 @@ function shoot() {
 
 }
 
-function updateBullets() {
+// -----------------------
+// Wall
+// -----------------------
 
-    for (let i = bullets.length - 1; i >= 0; i--) {
+const wall = {
+    x: canvas.width / 2,
+    y: 150,
+    width: 140,
+    height: 60,
+    health: 100
+};
 
-        const b = bullets[i];
+const gates = [
 
-        b.y -= bulletSpeed;
+{
+    x: canvas.width/2,
+    y: 250,
+    width: 120,
+    height: 50,
+    value: 5,
+    used: false
+}
 
-        // Collision with wall
-        if (
-            b.x > wall.x - wall.width / 2 &&
-            b.x < wall.x + wall.width / 2 &&
-            b.y > wall.y &&
-            b.y < wall.y + wall.height
-        ) {
+];
 
-            wall.health--;
+// -----------------------
+// Road
+// -----------------------
 
-            bullets.splice(i, 1);
+function drawRoad() {
 
-            continue;
-        }
+    ctx.fillStyle = "#666";
+    ctx.fillRect(canvas.width/2-120,0,240,canvas.height);
 
-        if (b.y < -20)
-            bullets.splice(i, 1);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 5;
+
+    for(let y=-40; y<canvas.height; y+=60){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            canvas.width/2,
+            y + (roadOffset % 60)
+        );
+
+        ctx.lineTo(
+            canvas.width/2,
+            y+30 + (roadOffset % 60)
+        );
+
+        ctx.stroke();
     }
+}
+
+function drawGates(){
+
+    gates.forEach(g=>{
+
+        if(g.used) return;
+
+        ctx.fillStyle="#00C853";
+
+        ctx.fillRect(
+            g.x-g.width/2,
+            g.y,
+            g.width,
+            g.height
+        );
+
+        ctx.fillStyle="white";
+
+        ctx.font="28px Arial";
+
+        ctx.textAlign="center";
+
+        ctx.fillText(
+            "+"+g.value,
+            g.x,
+            g.y+33
+        );
+
+    });
 
 }
 
@@ -116,17 +188,7 @@ function drawBullets() {
 
 }
 
-// -----------------------
-// Wall
-// -----------------------
 
-const wall = {
-    x: canvas.width / 2,
-    y: 150,
-    width: 140,
-    height: 60,
-    health: 100
-};
 
 function drawWall() {
 
@@ -176,36 +238,6 @@ canvas.addEventListener("pointermove", e => {
         leader.x = canvas.width - 40;
 
 });
-
-// -----------------------
-// Road
-// -----------------------
-
-function drawRoad() {
-
-    ctx.fillStyle = "#666";
-    ctx.fillRect(canvas.width/2-120,0,240,canvas.height);
-
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 5;
-
-    for(let y=-40; y<canvas.height; y+=60){
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            canvas.width/2,
-            y + (roadOffset % 60)
-        );
-
-        ctx.lineTo(
-            canvas.width/2,
-            y+30 + (roadOffset % 60)
-        );
-
-        ctx.stroke();
-    }
-}
 
 // -----------------------
 // Update Squad
@@ -272,7 +304,72 @@ function drawLeader(){
 
 // -----------------------
 
+function updateBullets() {
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+
+        const b = bullets[i];
+
+        b.y -= bulletSpeed;
+
+        // Collision with wall
+        if (
+            b.x > wall.x - wall.width / 2 &&
+            b.x < wall.x + wall.width / 2 &&
+            b.y > wall.y &&
+            b.y < wall.y + wall.height
+        ) {
+
+            wall.health--;
+
+            bullets.splice(i, 1);
+
+            continue;
+        }
+
+        if (b.y < -20)
+            bullets.splice(i, 1);
+    }
+
+}
+
+function updateGates(){
+
+    gates.forEach(g=>{
+
+        if(g.used) return;
+
+        if(
+            leader.x > g.x-g.width/2 &&
+            leader.x < g.x+g.width/2 &&
+            leader.y > g.y &&
+            leader.y < g.y+g.height
+        ){
+
+            g.used = true;
+
+            addSoldiers(g.value);
+
+        }
+        
+        if (
+            !g.used &&
+            Math.abs(g.y - leader.y) < 25 &&
+            leader.x > g.x - g.width / 2 &&
+            leader.x < g.x + g.width / 2
+        ) {
+            g.used = true;
+            addSoldiers(g.value);
+        }
+
+    });
+
+}
+
 function update() {
+    
+    gates.forEach(g => g.y += roadSpeed);
+    wall.y += roadSpeed;
 
     roadOffset += roadSpeed;
 
@@ -289,7 +386,11 @@ function update() {
     updateBullets();
     
     ctx.clearRect(0,0,canvas.width,canvas.height);
-
+    
+    updateGates();
+    
+    drawGates();
+    
     drawRoad();
 
     drawWall();
